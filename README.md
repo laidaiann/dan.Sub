@@ -1,7 +1,8 @@
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=DJP82TECKDSFL&currency_code=USD&source=url)
 C.P.Sub 公告系統
+dan.Sub V1.0 2025-12-19
 =======
-<h4>前言</h4>
+<h4>前言</h4> 
 
 PHP 公告系統，用 CSV 格式建構出來的小型 PHP 程式。
 
