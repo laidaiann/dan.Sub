@@ -1,0 +1,5 @@
+vendor/
+node_modules/
+.git/
+*.log
+storage/framework/  # 排除 Laravel 等框架的暫存檔
