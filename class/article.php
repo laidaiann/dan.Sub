@@ -156,7 +156,7 @@ class Article{
 					}
 				}
 			 }
-		}catch(Excepiton $e){
+		}catch(Exception $e){
 		}	
 		
 		$returnVal = array("status" => $return_status, "data" => $return_data);
@@ -292,7 +292,7 @@ class Article{
 						$return_status = true;
 					}
 				}
-			}catch(Excepiton $e){
+			}catch(Exception $e){
 			}	
 		}else{
 			$return_status = false;
@@ -643,7 +643,7 @@ class Article{
 					$return_status = true;
 				}
 			 }
-		}catch(Excepiton $e){
+		}catch(Exception $e){
 		}	
 		
 		$returnVal = array("status" => $return_status, "msg" => $msg_array);
