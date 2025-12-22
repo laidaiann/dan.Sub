@@ -9,12 +9,12 @@
 class Article
 {
 
-	var $filePath;
-	var $checkerPath;
-	var $folderPath;
-	var $getLib;
+	public string $filePath;
+	public string $checkerPath;
+	public string $folderPath;
+	public object $getLib;
 
-	function __construct($getFolder, $getPath, $getChecker, $getLib)
+	public function __construct(string $getFolder, string $getPath, string $getChecker, object $getLib)
 	{
 		$this->filePath = $getPath;
 		$this->checkerPath = $getChecker;
@@ -22,7 +22,7 @@ class Article
 		$this->getLib = $getLib;
 	}
 
-	function getAllList($mode = null, $ordercolumn = null, $orderby = null, $keywords = null)
+	public function getAllList(?string $mode = null, ?string $ordercolumn = null, ?string $orderby = null, ?string $keywords = null)
 	{
 
 		$returnVal = array();
@@ -122,7 +122,7 @@ class Article
 						$data[9],
 						$data[10]
 					);
-					array_push($returnVal, $setList);
+					$returnVal[] = $setList;
 				}
 			}
 			fclose($handle);
@@ -147,7 +147,7 @@ class Article
 		return $returnVal;
 	}
 
-	function getArticle($getId)
+	public function getArticle(int $getId)
 	{
 
 		$returnVal = array("status" => false, "data" => array());
@@ -172,12 +172,12 @@ class Article
 		} catch (Exception $e) {
 		}
 
-		$returnVal = array("status" => $return_status, "data" => $return_data);
+		$returnVal = array("status" => $return_status ?? false, "data" => $return_data ?? []);
 
 		return $returnVal;
 	}
 
-	function ipChecker()
+	public function ipChecker()
 	{
 
 		// get now time
@@ -187,7 +187,8 @@ class Article
 		// get data
 		$fp = fopen($this->checkerPath, "r");
 		// get content
-		$contents = @fread($fp, filesize($this->checkerPath));
+		$fsize = filesize($this->checkerPath);
+		$contents = ($fsize > 0) ? fread($fp, $fsize) : "";
 
 		// split contents
 		$maxData = 50;
@@ -199,11 +200,11 @@ class Article
 		foreach ($dataArray as $ipData) {
 			$ipArray = explode(",", $ipData);
 			$getTheIp = $ipArray[0];
-			$getTheDate = @$ipArray[1];
+			$getTheDate = $ipArray[1] ?? null;
 
 			if ($countData < $maxData) {
 				$countData++;
-				array_push($getLineArray, $ipData);
+				$getLineArray[] = $ipData;
 			} else {
 				break;
 			}
@@ -214,10 +215,10 @@ class Article
 		foreach ($getLineArray as $ipData) {
 			$ipArray = explode(",", $ipData);
 			$getTheIp = $ipArray[0];
-			$getTheDate = @$ipArray[1];
+			$getTheDate = $ipArray[1] ?? null;
 
 			if ($getTheIp == $getIp) {
-				array_push($checkArray, $getTheDate);
+				$checkArray[] = $getTheDate;
 				// echo $getTheDate;
 				// echo "<br>";
 			}
@@ -257,7 +258,7 @@ class Article
 		return $returnVal;
 	}
 
-	function addViewCounts($getId)
+	public function addViewCounts(int $getId)
 	{
 		$returnVal = array("status" => false);
 
@@ -289,7 +290,7 @@ class Article
 								$existData[10] = strtotime(date("Y-m-d H:i:s"));
 							}
 
-							array_push($dataArray, $existData);
+							$dataArray[] = $existData;
 						}
 
 						// check time
@@ -313,12 +314,12 @@ class Article
 			$return_status = false;
 		}
 
-		$returnVal = array("status" => $return_status);
+		$returnVal = array("status" => $return_status ?? false);
 
 		return $returnVal;
 	}
 
-	function addNewArticle($getData, $getFile)
+	public function addNewArticle(array $getData, array $getFile)
 	{
 
 		$msg_array = array();
@@ -347,17 +348,17 @@ class Article
 				// check values
 				if (!filter_has_var(INPUT_POST, "article_title") || !$this->getLib->checkVal($article_title)) {
 					$error_msg = "請輸入標題";
-					array_push($msg_array, $error_msg);
+					$msg_array[] = $error_msg;
 				}
 
 				if (!filter_has_var(INPUT_POST, "article_author") || !$this->getLib->checkVal($article_author)) {
 					$error_msg = "請輸入發佈單位";
-					array_push($msg_array, $error_msg);
+					$msg_array[] = $error_msg;
 				}
 
 				if (!filter_has_var(INPUT_POST, "article_content") || !$this->getLib->checkVal($article_content)) {
 					$error_msg = "請輸入內文";
-					array_push($msg_array, $error_msg);
+					$msg_array[] = $error_msg;
 				}
 
 				if (!$this->getLib->checkVal($article_top)) {
@@ -374,7 +375,7 @@ class Article
 				if ($this->getLib->checkVal($getFile['article_file']['name'][0])) {
 					if ($uploadResult['status'] != true) {
 						$error_msg = "上傳檔案錯誤，請檢查您的檔案！";
-						array_push($msg_array, $error_msg);
+						$msg_array[] = $error_msg;
 					} else {
 						$article_files = implode(",", $uploadResult['file']);
 						$article_files_name = implode(",", $uploadResult['file_name']);
@@ -406,12 +407,12 @@ class Article
 						// check the last id
 						$getSize = count($resultArray);
 
-						$getLastId = @$resultArray[$getSize - 1][0];
+						$getLastId = $resultArray[$getSize - 1][0] ?? 0;
 
 						$columnArray[0] = $getLastId + 1;
 
 						// add new data
-						array_push($resultArray, $columnArray);
+						$resultArray[] = $columnArray;
 
 						// put data into csv
 						$fp = fopen($this->filePath, "w");
@@ -423,20 +424,20 @@ class Article
 						fclose($fp);
 
 						$success_msg = "新增文章成功！";
-						array_push($msg_array, $success_msg);
+						$msg_array[] = $success_msg;
 
 						// set status
 						$return_status = true;
 					} catch (Exception $e) {
 						$error_msg = "資料庫錯誤 <br />{$e}";
-						array_push($msg_array, $error_msg);
+						$msg_array[] = $error_msg;
 					}
 				}
 			}
 
 		} catch (Exception $e) {
 			$error_msg = "資料庫錯誤 <br />{$e}";
-			array_push($msg_array, $error_msg);
+			$msg_array[] = $error_msg;
 		}
 
 		$returnVal = array("status" => $return_status, "msg" => $msg_array);
@@ -444,7 +445,7 @@ class Article
 		return $returnVal;
 	}
 
-	function editArticle($getId, $getData, $getFile)
+	public function editArticle(int $getId, array $getData, array $getFile)
 	{
 
 		$msg_array = array();
@@ -474,7 +475,7 @@ class Article
 							$article_top = $getData['article_top'];
 						}
 
-						$file_del_array = "";
+						$file_del_array = [];
 						if (isset($getData['article_file_del'])) {
 							$file_del_array = $getData['article_file_del'];
 						}
@@ -493,17 +494,17 @@ class Article
 						// check values
 						if (!filter_has_var(INPUT_POST, "article_title") || !$this->getLib->checkVal($article_title)) {
 							$error_msg = "請輸入標題";
-							array_push($msg_array, $error_msg);
+							$msg_array[] = $error_msg;
 						}
 
 						if (!filter_has_var(INPUT_POST, "article_author") || !$this->getLib->checkVal($article_author)) {
 							$error_msg = "請輸入發佈單位";
-							array_push($msg_array, $error_msg);
+							$msg_array[] = $error_msg;
 						}
 
 						if (!filter_has_var(INPUT_POST, "article_content") || !$this->getLib->checkVal($article_content)) {
 							$error_msg = "請輸入內文";
-							array_push($msg_array, $error_msg);
+							$msg_array[] = $error_msg;
 						}
 
 						if (!$this->getLib->checkVal($article_top)) {
@@ -515,13 +516,17 @@ class Article
 							$count = 0;
 							foreach ($file_remain as $fileData) {
 								// skip del file
-								if (@in_array($count, $file_del_array)) {
+								if (in_array($count, $file_del_array)) {
 									// del file
-									@unlink($this->folderPath . $fileData);
+									// Security fix: use basename() to prevent directory traversal
+									$targetFile = $this->folderPath . basename($fileData);
+									if (file_exists($targetFile)) {
+										unlink($targetFile);
+									}
 								} else {
 									// push data
-									array_push($article_files, $fileData);
-									array_push($article_files_name, $file_name_remain[$count]);
+									$article_files[] = $fileData;
+									$article_files_name[] = $file_name_remain[$count];
 								}
 								$count++;
 							}
@@ -535,7 +540,7 @@ class Article
 						if ($this->getLib->checkVal($getFile['article_file']['name'][0])) {
 							if ($uploadResult['status'] != true) {
 								$error_msg = "上傳檔案錯誤，請檢查您的檔案！";
-								array_push($msg_array, $error_msg);
+								$msg_array[] = $error_msg;
 							} else {
 								// merge array
 								$new_article_files_array = array_merge($article_files, $uploadResult['file']);
@@ -589,7 +594,7 @@ class Article
 										$existData[10] = $existData[10];
 									}
 
-									array_push($dataArray, $existData);
+									$dataArray[] = $existData;
 								}
 
 								// put data into csv
@@ -602,13 +607,13 @@ class Article
 								fclose($fp);
 
 								$success_msg = "更新文章成功！";
-								array_push($msg_array, $success_msg);
+								$msg_array[] = $success_msg;
 
 								// set status
 								$return_status = true;
 							} catch (Exception $e) {
 								$error_msg = "資料庫錯誤 <br />{$e}";
-								array_push($msg_array, $error_msg);
+								$msg_array[] = $error_msg;
 							}
 						}
 					}
@@ -617,7 +622,7 @@ class Article
 
 		} catch (Exception $e) {
 			$error_msg = "資料庫錯誤 <br />{$e}";
-			array_push($msg_array, $error_msg);
+			$msg_array[] = $error_msg;
 		}
 
 		$returnVal = array("status" => $return_status, "msg" => $msg_array);
@@ -625,7 +630,7 @@ class Article
 		return $returnVal;
 	}
 
-	function delArticle($getId)
+	public function delArticle(int $getId)
 	{
 		$returnVal = array("status" => false, "msg" => array());
 		try {
@@ -645,7 +650,7 @@ class Article
 					// update exist data
 					foreach ($resultArray as $existData) {
 						if ($existData[0] != $getId) {
-							array_push($dataArray, $existData);
+							$dataArray[] = $existData;
 						}
 					}
 
@@ -659,7 +664,7 @@ class Article
 					fclose($fp);
 
 					$success_msg = "文章刪除成功！";
-					array_push($msg_array, $success_msg);
+					$msg_array[] = $success_msg;
 
 					// set status
 					$return_status = true;
