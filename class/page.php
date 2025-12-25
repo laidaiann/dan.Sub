@@ -1,87 +1,99 @@
 <?php
- /**
+/**
  * Model: C.P.Sub 公告系統
  * Author: Cooltey Feng
  * Lastest Update: 2020/12/19
  */
- 
-class Pager{
-		var $pageVar 	= 0;
-		var $manyVar 	= 10;
-		var $startVar 	= 0;
-		var $displayVar = 5;
-		var $pageNameVar;
-		var $totalVar;
-		
-		function __construct($page, $many, $display, $total, $pagename){
-			$page 		= strip_tags(intval($page));
-			$many 		= strip_tags(intval($many));
-			$display 	= strip_tags(intval($display));
-			$total 	= strip_tags(intval($total));
-			
-			if($page == "" || $page == "1" || $page <= "0"){
-				$start = 0;
-			}else{
-				$start = ($page- 1)*$many;
-			}
-				
-			$this->pageVar 		= $page;
-			$this->manyVar 		= $many;
-			$this->startVar 	= $start;
-			$this->displayVar 	= $display;
-			$this->totalVar		= $total;
-			$this->pageNameVar  = $pagename;
+
+class Pager
+{
+	// [Fix] Update property visibility
+	public $pageVar = 0;
+	public $manyVar = 10;
+	public $startVar = 0;
+	public $displayVar = 5;
+	public $pageNameVar;
+	public $totalVar;
+
+	// [Fix] Standardize constructor and visibility
+	public function __construct($page, $many, $display, $total, $pagename)
+	{
+		$page = strip_tags(intval($page));
+		$many = strip_tags(intval($many));
+		$display = strip_tags(intval($display));
+		$total = strip_tags(intval($total));
+
+		if ($page == "" || $page == "1" || $page <= "0") {
+			$start = 0;
+		} else {
+			// [Fix] Div by zero check handled by logic but ensure $many is valid if used in division later
+			// Here it's multiplication so it's safe, but strictly let's just use it.
+			$start = ($page - 1) * $many;
 		}
-		
-		function getPageControler(){
-			// pages
-            $total 		= ceil($this->totalVar/$this->manyVar);
-			$now 			= $this->pageVar;
-			$displayNum 	= $this->displayVar;
-			$many			= $this->manyVar;
-			$current_page  = $this->pageNameVar;
-			echo "<ul class=\"pagination pull-right\">";
-			 
-			if($now == "" || $now == "1" || $now <= "0"){
-            	$new_now = 1;
-            }else{
-                $new_now = $now;
-                $head_page = $new_now - 1;
-            }
 
-            if(($now-$new_now) > $displayNum){
-                $head = $now - $displayNum;
-                $last = $total - $displayNum;
-            }else{
-            	$head = 0;
-            	$last = 0;
-            }
+		$this->pageVar = $page;
+		$this->manyVar = $many;
+		$this->startVar = $start;
+		$this->displayVar = $display;
+		$this->totalVar = $total;
+		$this->pageNameVar = $pagename;
+	}
 
-			if($now > 1 && (($total-$last)+1) > $displayNum && $total > $displayNum){
-				echo "<li><a href={$current_page}page=1>最前頁...</a></li>";
+	public function getPageControler()
+	{
+		// pages
+		// [Fix] Div by zero protection
+		if ($this->manyVar <= 0) {
+			$this->manyVar = 10;
+		}
+
+		$total = ceil($this->totalVar / $this->manyVar);
+		$now = $this->pageVar;
+		$displayNum = $this->displayVar;
+		$many = $this->manyVar;
+		$current_page = $this->pageNameVar;
+		echo "<ul class=\"pagination pull-right\">";
+
+		if ($now == "" || $now == "1" || $now <= "0") {
+			$new_now = 1;
+		} else {
+			$new_now = $now;
+			$head_page = $new_now - 1;
+		}
+
+		if (($now - $new_now) > $displayNum) {
+			$head = $now - $displayNum;
+			$last = $total - $displayNum;
+		} else {
+			$head = 0;
+			$last = 0;
+		}
+
+		if ($now > 1 && (($total - $last) + 1) > $displayNum && $total > $displayNum) {
+			echo "<li><a href={$current_page}page=1>最前頁...</a></li>";
+		}
+
+		$totalDisplay = false;
+		for ($i = (1 + $head); $i < (($total - $last) + 1); $i++) {
+
+			if (!(($i - $new_now) > $displayNum || ($new_now - $i) > $displayNum)) {
+				if ($i == $new_now) {
+					echo "<li class=\"active\"><span>{$i}<span class=\"sr-only\">(current)</span></span></li>";
+				} else {
+					echo "<li><a href={$current_page}page={$i}>{$i}</a></li>";
+					if ($i == $total || $i == ($total - 1)) {
+						$totalDisplay = true;
+					}
+				}
 			}
-				 
-			$totalDisplay = false;
-            for($i=(1+$head); $i<(($total-$last)+1); $i++){
-                
-                if(!(($i - $new_now) > $displayNum || ($new_now - $i) > $displayNum)){
-                    if($i == $new_now){
-                        echo "<li class=\"active\"><span>{$i}<span class=\"sr-only\">(current)</span></span></li>";
-                    }else{
-                        echo "<li><a href={$current_page}page={$i}>{$i}</a></li>";
-						if($i == $total || $i == ($total-1)){
-							$totalDisplay = true;
-						}
-                    }
-                }
 
-            }
-			
-			if($now != $total && $total > $displayNum && $totalDisplay == false){
-				echo "<li><a href={$current_page}page={$total}>...最終頁</a></li>";
-			}
-			
-			echo "</ul>";
+		}
 
-		}	
+		if ($now != $total && $total > $displayNum && $totalDisplay == false) {
+			echo "<li><a href={$current_page}page={$total}>...最終頁</a></li>";
+		}
+
+		echo "</ul>";
+
+	}
 }

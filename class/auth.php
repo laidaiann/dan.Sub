@@ -11,13 +11,14 @@ class Auth
 	public array $accountData;
 	public object $getLib;
 
-	function __construct(array $account_data, object $getLib)
+	// [Fix] Standardize constructor and visibility
+	public function __construct(array $account_data, object $getLib)
 	{
 		$this->accountData = $account_data;
 		$this->getLib = $getLib;
 	}
 
-	function setLogin(array $getData): array
+	public function setLogin(array $getData): array
 	{
 
 		$return_status = false;
@@ -56,6 +57,7 @@ class Auth
 								if ($aData['password'] == $cpsub_password) {
 
 									// 啟動 Session 前的檢查
+									// [Fix] Check session status before starting
 									if (session_status() === PHP_SESSION_NONE) {
 										session_start();
 									}
@@ -106,7 +108,7 @@ class Auth
 	}
 
 	// check auth
-	function checkAuth(array $cookie, array $session, string $page): void
+	public function checkAuth(array $cookie, array $session, string $page): void
 	{
 		if (!preg_match("/login/", $page)) {
 
@@ -155,8 +157,9 @@ class Auth
 		}
 	}
 
-	function clearAuth(): void
+	public function clearAuth(): void
 	{
+		// [Fix] Check session status
 		if (session_status() === PHP_SESSION_NONE) {
 			session_start();
 		}
