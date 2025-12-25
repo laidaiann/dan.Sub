@@ -4,111 +4,126 @@
  * Author: Cooltey Feng
  * Lastest Update: 2014/6/9
  */
- 
- // include configuration file
- include_once("config/config.php");
- // include setting file
- include_once("class/settings.php");
- // include library file
- include_once("class/lib.php");
- // include article file
- include_once("class/article.php");
- // include page file
- include_once("class/page.php");
- // include template file
- include_once("class/template.php");
- 
- $getSettings 	= new Settings($config_setting_file_path);
- $cpsub			= $getSettings->getSettings();
- $getLib 		= new Lib($cpsub['filter'], $cpsub['stripslashes']);
- $getTmp 		= new Template($config_current_version);
- $getId			= $_GET['id'];
- // set Article
- $getArticle 	= new Article($config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib);
- // add view counts
- $getArticle->addViewCounts($getId);
- // get single article
- $getArticleResult = $getArticle->getArticle($getId);
- 
- if($getArticleResult['status'] == true){ 
-	$getArticleData		= $getArticleResult['data'];
+
+// include configuration file
+include_once("config/config.php");
+// include setting file
+include_once("class/settings.php");
+// include library file
+include_once("class/lib.php");
+// include article file
+include_once("class/article.php");
+// include page file
+include_once("class/page.php");
+// include template file
+include_once("class/template.php");
+
+$getSettings = new Settings($config_setting_file_path);
+$cpsub = $getSettings->getSettings();
+$getLib = new Lib($cpsub['filter'], $cpsub['stripslashes']);
+$getTmp = new Template($config_current_version);
+// [Fix] Critical: Secure ID handling
+$getId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// set Article
+$getArticle = new Article($config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib);
+
+if ($getId > 0) {
+	// add view counts
+	$getArticle->addViewCounts($getId);
+	// get single article
+	$getArticleResult = $getArticle->getArticle($getId);
+} else {
+	$getArticleResult = ['status' => false];
+}
+
+if ($getArticleResult['status'] == true) {
+	$getArticleData = $getArticleResult['data'];
 	// get colum values
-	$article_title 		= $getLib->setFilter($getArticleData['title']);
-	$article_author 	= $getLib->setFilter($getArticleData['author']);
-	$article_date 		= $getLib->setFilter($getArticleData['date']);
-	$article_content 	= $getLib->setFilter($getArticleData['content']);
-	$article_counts 	= $getLib->setFilter($getArticleData['counts']);
-	$article_files 		= explode(",", $getArticleData['files']);
-	$article_files_name	= explode(",", $getArticleData['files_name']);
-	
-	if($getArticleData['top'] == "1"){
+	// [Fix] XSS protection using htmlspecialchars for text fields
+	$article_title = htmlspecialchars($getLib->setFilter($getArticleData['title']), ENT_QUOTES, 'UTF-8');
+	$article_author = htmlspecialchars($getLib->setFilter($getArticleData['author']), ENT_QUOTES, 'UTF-8');
+	$article_date = $getLib->setFilter($getArticleData['date']);
+	$article_content = $getLib->setFilter($getArticleData['content']);
+	$article_counts = $getLib->setFilter($getArticleData['counts']);
+	$article_files = explode(",", $getArticleData['files']);
+	$article_files_name = explode(",", $getArticleData['files_name']);
+
+	if ($getArticleData['top'] == "1") {
 		$article_top = " checked";
-	}else{
-		$article_top = "";			
+	} else {
+		$article_top = "";
 	}
 
- }else{ 
+} else {
 	$return_page = "./index.php";
 	echo $getLib->showAlertMsg("參數錯誤");
 	echo $getLib->getRedirect($return_page);
- }
- 
- 
- // current page
- $website_current_page = "閱讀文章"; 
- 
- // get title
- $website_title = $getLib->setFilter($cpsub['title']). "-" .$website_current_page. "-" .$article_title;
+	exit; // [Fix] Exit after redirect
+}
+
+
+// current page
+$website_current_page = "閱讀文章";
+
+// get title
+$website_title = $getLib->setFilter($cpsub['title']) . "-" . $website_current_page . "-" . $article_title;
 ?>
 
 <!DOCTYPE html>
 <html lang="zh-tw">
-  <head>
-	<?=$getTmp->setHeader($website_title);?>
-  </head>
-  <body>
+
+<head>
+	<?= $getTmp->setHeader($website_title); ?>
+</head>
+
+<body>
 	<div class="container">
 		<div class="page-header">
-		  <h1><a href="./"><?=$getLib->setFilter($cpsub['title']);?></a> <small><?=$website_current_page;?></small></h1>
+			<h1><a href="./"><?= $getLib->setFilter($cpsub['title']); ?></a> <small><?= $website_current_page; ?></small>
+			</h1>
 		</div>
 		<div class="navbar">
 			<p class="navbar-text navbar-right"><a href="index.php">回首頁</a></p>
 		</div>
 		<div class="panel panel-default">
-		  <div class="panel-heading">
-			<h3 class="panel-title"><?=$article_title;?></h3>
-		  </div>
-		  <div class="panel-body"><?=$article_content;?></div>
-		  <ul class="list-group">
-		  <?php
-			if(count($article_files) > 0 && $getLib->checkVal($article_files[0])){
-		  ?>
-			<li class="list-group-item">附件下載
-				<ul class="list-group">
+			<div class="panel-heading">
+				<h3 class="panel-title"><?= $article_title; ?></h3>
+			</div>
+			<div class="panel-body"><?= $article_content; ?></div>
+			<ul class="list-group">
 				<?php
-					// show files
-					$count = 0;
-					foreach($article_files AS $fileData){
+				if (count($article_files) > 0 && $getLib->checkVal($article_files[0])) {
+					?>
+					<li class="list-group-item">附件下載
+						<ul class="list-group">
+							<?php
+							// show files
+							$count = 0;
+							foreach ($article_files as $fileData) {
+								$fileName = $article_files_name[$count] ?? '';
+								?>
+								<li class="list-group-item">
+									<a href="<?= $config_upload_folder . $getLib->setFilter($fileData); ?>" target="_blank">
+										<span class="glyphicon glyphicon-cloud-download pull-left download_icon"></span>
+										<?= htmlspecialchars($getLib->setFilter($fileName), ENT_QUOTES, 'UTF-8'); ?>
+									</a>
+								</li>
+								<?php
+								$count++;
+							}
+							?>
+						</ul>
+					</li>
+					<?php
+				}
 				?>
-						<li class="list-group-item">
-							<a href="<?=$config_upload_folder.$getLib->setFilter($fileData);?>" target="_blank">
-							<span class="glyphicon glyphicon-cloud-download pull-left download_icon"></span>
-							<?=$getLib->setFilter($article_files_name[$count]);?>
-							</a>
-						</li>
-				<?php
-						$count++;
-					}
-				?>
-				</ul>
-			</li>
-		  <?php
-			}
-		  ?>
-			<li class="list-group-item">發佈人：<?=$article_author;?><br>發佈日期：<?=$article_date;?><span class="pull-right">觀看人數：<?=$article_counts;?></span></li>
-		  </ul>
+				<li class="list-group-item">發佈人：<?= $article_author; ?><br>發佈日期：<?= $article_date; ?><span
+						class="pull-right">觀看人數：<?= $article_counts; ?></span></li>
+			</ul>
 		</div>
 	</div>
-	<?=$getTmp->setFooter();?>
-  </body>
+	<?= $getTmp->setFooter(); ?>
+</body>
+
 </html>
