@@ -102,14 +102,14 @@ $system_csrf_protection = $getLib->setFilter($cpsub['csrf_protection'] ?? '');
 		<label for="system_display_number" class="col-lg-2 control-label">每頁文章顯示數量</label>
 		<div class="col-lg-10">
 			<input type="text" class="form-control" id="system_display_number" name="system_display_number"
-				placeholder="請輸入數字" value="<?= $system_display_num; ?>">
+				placeholder="請輸入數字" value="<?= htmlspecialchars($system_display_num, ENT_QUOTES, 'UTF-8'); ?>">
 		</div>
 	</div>
 	<div class="form-group">
 		<label for="system_display_page_number" class="col-lg-2 control-label">頁數顯示數量</label>
 		<div class="col-lg-10">
 			<input type="text" class="form-control" id="system_display_page_number" name="system_display_page_number"
-				placeholder="請輸入數字" value="<?= $system_display_page_num; ?>">
+				placeholder="請輸入數字" value="<?= htmlspecialchars($system_display_page_num, ENT_QUOTES, 'UTF-8'); ?>">
 		</div>
 	</div>
 	<div class="form-group">
