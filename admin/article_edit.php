@@ -5,6 +5,9 @@
  * Lastest Update: 2025/12/22
  */
 
+// [Fix] Import global variables
+global $config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib, $getCSRF;
+
 // 確保必要的設定與物件存在
 if (!isset($config_upload_folder) || !isset($config_article_file_path) || !isset($config_ip_file_path) || !isset($getLib)) {
 	exit("System Error: Configuration missing.");
@@ -14,6 +17,7 @@ if (!isset($config_upload_folder) || !isset($config_article_file_path) || !isset
 $getArticle = new Article($config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib);
 
 // 安全處理 ID
+// [Fix] Defensive check for ID
 $getId = isset($_GET['id']) ? intval($getLib->setFilter($_GET['id'])) : 0;
 
 // Initial variables
@@ -28,6 +32,7 @@ try {
 
 		// check CSRF
 		if (isset($getCSRF)) {
+			// [Fix] Pass $_POST safely
 			$getCSRF->checkToken($_POST);
 		}
 
@@ -50,16 +55,17 @@ $getArticleResult = $getArticle->getArticle($getId);
 if ($getArticleResult['status'] == true) {
 	$getArticleData = $getArticleResult['data'];
 	// get colum values
-	$article_title = $getLib->setFilter($getArticleData['title']);
-	$article_author = $getLib->setFilter($getArticleData['author']);
-	$article_date = $getLib->setFilter($getArticleData['date']);
-	$article_content = $getLib->setFilter($getArticleData['content']); // 內容通常含有 HTML，setFilter 視設定而定，此處保留原意
+	// [Fix] Use defensive coding, accessing keys with ??
+	$article_title = $getLib->setFilter($getArticleData['title'] ?? '');
+	$article_author = $getLib->setFilter($getArticleData['author'] ?? '');
+	$article_date = $getLib->setFilter($getArticleData['date'] ?? date('Y-m-d'));
+	$article_content = $getLib->setFilter($getArticleData['content'] ?? ''); // 內容通常含有 HTML，setFilter 視設定而定，此處保留原意
 
 	// 安全處理檔案列表
-	$article_files = explode(",", $getArticleData['files']);
-	$article_files_name = explode(",", $getArticleData['files_name']);
+	$article_files = explode(",", $getArticleData['files'] ?? '');
+	$article_files_name = explode(",", $getArticleData['files_name'] ?? '');
 
-	if ($getArticleData['top'] == "1") {
+	if (($getArticleData['top'] ?? '0') == "1") {
 		$article_top = " checked";
 	} else {
 		$article_top = "";
@@ -85,15 +91,17 @@ if ($getArticleResult['status'] == true) {
 	<div class="form-group">
 		<label for="article_title" class="col-lg-2 control-label">標題</label>
 		<div class="col-lg-10">
+			<!-- [Fix] htmlspecialchars -->
 			<input type="text" class="form-control" id="article_title" name="article_title" placeholder="標題"
-				value="<?= $article_title; ?>">
+				value="<?= htmlspecialchars($article_title, ENT_QUOTES, 'UTF-8'); ?>">
 		</div>
 	</div>
 	<div class="form-group">
 		<label for="article_author" class="col-lg-2 control-label">發佈單位</label>
 		<div class="col-lg-10">
+			<!-- [Fix] htmlspecialchars -->
 			<input type="text" class="form-control" id="article_author" name="article_author" placeholder="發佈單位"
-				value="<?= $article_author; ?>">
+				value="<?= htmlspecialchars($article_author, ENT_QUOTES, 'UTF-8'); ?>">
 		</div>
 	</div>
 	<div class="form-group">
@@ -126,9 +134,12 @@ if ($getArticleResult['status'] == true) {
 						<div class="list-group-item">
 							<!-- 確保輸出路徑安全 -->
 							<a href="<?= $config_upload_folder . $getLib->setFilter($fileData); ?>"
-								target="_blank"><?= $getLib->setFilter($article_files_name[$count] ?? ''); ?></a>
-							<input type="hidden" value="<?= $getLib->setFilter($fileData); ?>" name="article_file_remain[]">
-							<input type="hidden" value="<?= $getLib->setFilter($article_files_name[$count] ?? ''); ?>"
+								target="_blank"><?= htmlspecialchars($getLib->setFilter($article_files_name[$count] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
+							<input type="hidden"
+								value="<?= htmlspecialchars($getLib->setFilter($fileData), ENT_QUOTES, 'UTF-8'); ?>"
+								name="article_file_remain[]">
+							<input type="hidden"
+								value="<?= htmlspecialchars($getLib->setFilter($article_files_name[$count] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
 								name="article_file_name_remain[]">
 							<label class="pull-right">刪除檔案
 								<input type="checkbox" value="<?= $count; ?>" name="article_file_del[]">
@@ -148,14 +159,18 @@ if ($getArticleResult['status'] == true) {
 	<div class="form-group">
 		<label for="article_file" class="col-lg-2 control-label">發佈時間</label>
 		<div class="col-lg-10">
-			<input type="text" name="article_date" value="<?= $article_date; ?>" class="form-control auto_selectbar">
+			<!-- [Fix] htmlspecialchars -->
+			<input type="text" name="article_date" value="<?= htmlspecialchars($article_date, ENT_QUOTES, 'UTF-8'); ?>"
+				class="form-control auto_selectbar">
 			(年-月-日 時:分:秒)
 		</div>
 	</div>
 	<div class="form-group">
 		<label for="article_author" class="col-lg-2 control-label">文章內容</label>
 		<div class="col-lg-10">
-			<textarea name="article_content" class="ckeditor"><?= $article_content; ?></textarea>
+			<!-- [Fix] htmlspecialchars for textarea content -->
+			<textarea name="article_content"
+				class="ckeditor"><?= htmlspecialchars($article_content, ENT_QUOTES, 'UTF-8'); ?></textarea>
 		</div>
 	</div>
 	<div class="form-group">

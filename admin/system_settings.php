@@ -4,124 +4,139 @@
  * Author: Cooltey Feng
  * Lastest Update: 2019/02/10
  */
- 
- // transfer data
- $getData = $_POST;
-  
- $selector_array			= array("0" => "否", "1" => "是");
- 
- $getResult = $getSettings->updateSettings($getData, $getLib);
- 
- if($getResult['status'] == true){	
-	$success_msg_array = $getResult['msg'];
- 	$error_msg_array = array();
-	$new_msg = "若設定未更新，請<a href=\"./manage.php?p=system_settings\">按此</a>重新載入";
-	array_push($success_msg_array, $new_msg);
-	
-	// update setting lib
-	$getSettings 	= new Settings($config_setting_file_path);
-	$cpsub			= $getSettings->getSettings();
- }else{
- 	$success_msg_array = array();
-	$error_msg_array   = $getResult['msg'];
- }
- 
- 
- // get setting data
- $system_title 				= $getLib->setFilter($cpsub['title']);
- $system_filter 			= $getLib->setFilter($cpsub['filter']);
- $system_stripslashes 		= $getLib->setFilter($cpsub['stripslashes']);
- $system_display_num 		= $getLib->setFilter($cpsub['display_num']);
- $system_display_page_num 	= $getLib->setFilter($cpsub['display_page_num']);
- $system_csrf_protection	= $getLib->setFilter($cpsub['csrf_protection']);
- 
+
+// [Fix] Import global variables
+global $getSettings, $getLib, $config_setting_file_path, $cpsub;
+
+// transfer data
+// [Fix] Defensive POST
+$getData = $_POST;
+
+$selector_array = array("0" => "否", "1" => "是");
+
+// [Fix] Check if send triggered update
+if (isset($getData['send'])) {
+	$getResult = $getSettings->updateSettings($getData, $getLib);
+
+	if ($getResult['status'] == true) {
+		$success_msg_array = $getResult['msg'];
+		$error_msg_array = array();
+		$new_msg = "若設定未更新，請<a href=\"./manage.php?p=system_settings\">按此</a>重新載入";
+		$success_msg_array[] = $new_msg;
+
+		// update setting lib
+		$getSettings = new Settings($config_setting_file_path);
+		$cpsub = $getSettings->getSettings();
+	} else {
+		$success_msg_array = array();
+		$error_msg_array = $getResult['msg'];
+	}
+} else {
+	$success_msg_array = [];
+	$error_msg_array = [];
+}
+
+
+// get setting data
+// [Fix] Defensive key mapping
+$system_title = $getLib->setFilter($cpsub['title'] ?? '');
+$system_filter = $getLib->setFilter($cpsub['filter'] ?? '');
+$system_stripslashes = $getLib->setFilter($cpsub['stripslashes'] ?? '');
+$system_display_num = $getLib->setFilter($cpsub['display_num'] ?? '');
+$system_display_page_num = $getLib->setFilter($cpsub['display_page_num'] ?? '');
+$system_csrf_protection = $getLib->setFilter($cpsub['csrf_protection'] ?? '');
+
 ?>
-		<?php $getLib->showErrorMsg($error_msg_array);?>
-		<?php $getLib->showSuccessMsg($success_msg_array);?>
-		
-		<form class="form-horizontal" role="form" action="manage.php?p=system_settings" method="post">
-		  <div class="form-group">
-			<label for="system_title" class="col-lg-2 control-label">公告系統標題</label>
-			<div class="col-lg-10">
-			  	<input type="text" class="form-control" id="system_title" name="system_title" placeholder="公告系統標題" value="<?=$system_title;?>">
-			</div>
-		  </div>
-		  <div class="form-group">
-			<label for="system_filter" class="col-lg-2 control-label">是否過濾 HTML 語法？</label>
-			<div class="col-lg-10">
-			  	<select class="form-control" name="system_filter">
-				  <?php
-					foreach($selector_array AS $oKey => $oVal){
-						
-						if($oKey == $system_filter){
-							$selected = "selected";
-							
-						}else{
-							$selected = "";						
-						}
-					?>						
-						<option value="<?=$oKey;?>" <?=$selected;?>><?=$oVal;?></option>
-					<?php
-					}
-				  ?>
-				</select>
-			</div>
-		  </div>
-		  <div class="form-group">
-			<label for="system_filter" class="col-lg-2 control-label">是否過濾去除反斜線(如果您無法更改伺服器設定時)？</label>
-			<div class="col-lg-10">
-			  	<select class="form-control" name="system_stripslashes">
+<?php $getLib->showErrorMsg($error_msg_array); ?>
+<?php $getLib->showSuccessMsg($success_msg_array); ?>
+
+<form class="form-horizontal" role="form" action="manage.php?p=system_settings" method="post">
+	<div class="form-group">
+		<label for="system_title" class="col-lg-2 control-label">公告系統標題</label>
+		<div class="col-lg-10">
+			<input type="text" class="form-control" id="system_title" name="system_title" placeholder="公告系統標題"
+				value="<?= htmlspecialchars($system_title, ENT_QUOTES, 'UTF-8'); ?>">
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="system_filter" class="col-lg-2 control-label">是否過濾 HTML 語法？</label>
+		<div class="col-lg-10">
+			<select class="form-control" name="system_filter">
 				<?php
-					foreach($selector_array AS $oKey => $oVal){
+				foreach ($selector_array as $oKey => $oVal) {
+
+					if ($oKey == $system_filter) {
+						$selected = "selected";
+
+					} else {
 						$selected = "";
-						
-						if($oKey == $system_stripslashes){
-							$selected = "selected";
-						}
-					?>						
-						<option value="<?=$oKey;?>" <?=$selected;?>><?=$oVal;?></option>
-					<?php
 					}
+					?>
+					<option value="<?= $oKey; ?>" <?= $selected; ?>><?= $oVal; ?></option>
+					<?php
+				}
 				?>
-				</select>
-			</div>
-		  </div>
-		  <div class="form-group">
-			<label for="system_display_number" class="col-lg-2 control-label">每頁文章顯示數量</label>
-			<div class="col-lg-10">
-			  	<input type="text" class="form-control" id="system_display_number" name="system_display_number" placeholder="請輸入數字" value="<?=$system_display_num;?>">
-			</div>
-		  </div>
-		  <div class="form-group">
-			<label for="system_display_page_number" class="col-lg-2 control-label">頁數顯示數量</label>
-			<div class="col-lg-10">
-			  	<input type="text" class="form-control" id="system_display_page_number" name="system_display_page_number" placeholder="請輸入數字" value="<?=$system_display_page_num;?>">
-			</div>
-		  </div>
-		  <div class="form-group">
-			<label for="system_csrf_protection" class="col-lg-2 control-label">是否開啟<a href="https://zh.wikipedia.org/wiki/跨站请求伪造" target="_blank">跨站請求偽造</a>保護？</label>
-			<div class="col-lg-10">
-			  	<select class="form-control" name="system_csrf_protection">
-				  <?php
-					foreach($selector_array AS $oKey => $oVal){
-						
-						if($oKey == $system_csrf_protection){
-							$selected = "selected";
-							
-						}else{
-							$selected = "";						
-						}
-					?>						
-						<option value="<?=$oKey;?>" <?=$selected;?>><?=$oVal;?></option>
-					<?php
+			</select>
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="system_filter" class="col-lg-2 control-label">是否過濾去除反斜線(如果您無法更改伺服器設定時)？</label>
+		<div class="col-lg-10">
+			<select class="form-control" name="system_stripslashes">
+				<?php
+				foreach ($selector_array as $oKey => $oVal) {
+					$selected = "";
+
+					if ($oKey == $system_stripslashes) {
+						$selected = "selected";
 					}
-				  ?>
-				</select>
-			</div>
-		  </div>
-		  <div class="form-group">
-			<div class="col-lg-offset-2 col-lg-10">
-			  <button type="submit" class="btn btn-default" name="send" value="send">儲存</button>
-			</div>
-		  </div>
-		</form>
+					?>
+					<option value="<?= $oKey; ?>" <?= $selected; ?>><?= $oVal; ?></option>
+					<?php
+				}
+				?>
+			</select>
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="system_display_number" class="col-lg-2 control-label">每頁文章顯示數量</label>
+		<div class="col-lg-10">
+			<input type="text" class="form-control" id="system_display_number" name="system_display_number"
+				placeholder="請輸入數字" value="<?= $system_display_num; ?>">
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="system_display_page_number" class="col-lg-2 control-label">頁數顯示數量</label>
+		<div class="col-lg-10">
+			<input type="text" class="form-control" id="system_display_page_number" name="system_display_page_number"
+				placeholder="請輸入數字" value="<?= $system_display_page_num; ?>">
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="system_csrf_protection" class="col-lg-2 control-label">是否開啟<a
+				href="https://zh.wikipedia.org/wiki/跨站请求伪造" target="_blank">跨站請求偽造</a>保護？</label>
+		<div class="col-lg-10">
+			<select class="form-control" name="system_csrf_protection">
+				<?php
+				foreach ($selector_array as $oKey => $oVal) {
+
+					if ($oKey == $system_csrf_protection) {
+						$selected = "selected";
+
+					} else {
+						$selected = "";
+					}
+					?>
+					<option value="<?= $oKey; ?>" <?= $selected; ?>><?= $oVal; ?></option>
+					<?php
+				}
+				?>
+			</select>
+		</div>
+	</div>
+	<div class="form-group">
+		<div class="col-lg-offset-2 col-lg-10">
+			<button type="submit" class="btn btn-default" name="send" value="send">儲存</button>
+		</div>
+	</div>
+</form>

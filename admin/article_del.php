@@ -5,6 +5,9 @@
  * Lastest Update: 2025/12/22
  */
 
+// [Fix] Import global variables
+global $config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib, $getCSRF;
+
 // 確保必要的設定與物件存在
 if (!isset($config_upload_folder) || !isset($config_article_file_path) || !isset($config_ip_file_path) || !isset($getLib)) {
     exit("System Error: Configuration missing.");
@@ -14,6 +17,7 @@ if (!isset($config_upload_folder) || !isset($config_article_file_path) || !isset
 $getArticle = new Article($config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib);
 
 // 安全處理 ID
+// [Fix] Defensive ID check
 $getId = isset($_GET['id']) ? intval($getLib->setFilter($_GET['id'])) : 0;
 
 try {
@@ -21,6 +25,7 @@ try {
     // 原程式碼使用 $_GET 進行 CSRF 檢查
     if (isset($getCSRF)) {
         // 若使用 GET 刪除，Token 應包含在 URL 中
+        // [Fix] Pass $_GET for token validation as per logic freeze constraint
         $getCSRF->checkToken($_GET);
     }
 

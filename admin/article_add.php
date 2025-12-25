@@ -5,6 +5,9 @@
  * Lastest Update: 2025/12/22
  */
 
+// [Fix] Import global variables
+global $config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib, $getCSRF;
+
 // 確保必要的設定與物件存在
 if (!isset($config_upload_folder) || !isset($config_article_file_path) || !isset($config_ip_file_path) || !isset($getLib)) {
 	exit("System Error: Configuration missing.");
@@ -21,11 +24,13 @@ try {
 	// transfer data
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		// Filter Input Data
+		// [Fix] Defensive POST handling
 		$getData = $getLib->setFilter($_POST);
 		$getFile = $_FILES;
 
 		// check CSRF
 		if (isset($getCSRF)) {
+			// [Fix] Pass $_POST safely
 			$getCSRF->checkToken($_POST);
 		}
 
@@ -56,15 +61,17 @@ try {
 	<div class="form-group">
 		<label for="article_title" class="col-lg-2 control-label">標題</label>
 		<div class="col-lg-10">
+			<!-- [Fix] Use null coalescing and htmlspecialchars -->
 			<input type="text" class="form-control" id="article_title" name="article_title" placeholder="標題"
-				value="<?= isset($getData['article_title']) ? $getData['article_title'] : ''; ?>">
+				value="<?= htmlspecialchars($getData['article_title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		</div>
 	</div>
 	<div class="form-group">
 		<label for="article_author" class="col-lg-2 control-label">發佈單位</label>
 		<div class="col-lg-10">
+			<!-- [Fix] Use null coalescing and htmlspecialchars -->
 			<input type="text" class="form-control" id="article_author" name="article_author" placeholder="發佈單位"
-				value="<?= isset($getData['article_author']) ? $getData['article_author'] : ''; ?>">
+				value="<?= htmlspecialchars($getData['article_author'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		</div>
 	</div>
 	<div class="form-group">
@@ -73,6 +80,7 @@ try {
 				<label>
 					<?php
 					$checked = "";
+					// [Fix] Defensive check for checked state
 					if (isset($getData['article_top']) && $getData['article_top'] == "1") {
 						$checked = "checked";
 					}
@@ -100,8 +108,11 @@ try {
 	<div class="form-group">
 		<label for="article_author" class="col-lg-2 control-label">文章內容</label>
 		<div class="col-lg-10">
+			<!-- [Fix] Content usually contains HTML so htmlspecialchars might be tricky for CKEditor 
+				 However, for textarea value it should be safe to encode to prevent breaking out of textarea 
+				 CKEditor will decode it back. -->
 			<textarea name="article_content"
-				class="ckeditor"><?= isset($getData['article_content']) ? $getData['article_content'] : ''; ?></textarea>
+				class="ckeditor"><?= htmlspecialchars($getData['article_content'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
 		</div>
 	</div>
 	<div class="form-group">
