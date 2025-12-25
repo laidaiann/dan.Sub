@@ -15,14 +15,14 @@ class Lib
 	// 轉換字元
 	// public string $set_htmlspecialchars = "0";
 
-	function __construct(string $get_filter, string $get_stripslahes)
+	public function __construct(string $get_filter, string $get_stripslahes)
 	{
 		$this->set_filter = $get_filter;
 		$this->set_stripslashes = $get_stripslahes;
 	}
 
 	// gen random string
-	function generateRandomString(int $length = 10): string
+	public function generateRandomString(int $length = 10): string
 	{
 		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		$randomString = '';
@@ -34,7 +34,7 @@ class Lib
 	}
 
 	// 簡易文字過濾
-	function setFilter($get_string, bool $adv = false)
+	public function setFilter($get_string, bool $adv = false)
 	{
 		// 支援陣列或字串，不強制轉型
 		if (is_array($get_string)) {
@@ -50,6 +50,8 @@ class Lib
 			$returnVal = strip_tags($returnVal);
 		}
 
+		// [Fix] Removed get_magic_quotes_gpc check (PHP 7.4 removed it)
+		// Assuming set_stripslashes property controls this behavior
 		if ($this->set_stripslashes == "1") {
 			$returnVal = stripslashes($returnVal);
 		}
@@ -69,7 +71,7 @@ class Lib
 	}
 
 	// 檢查是否有數值
-	function checkVal($get_val): bool
+	public function checkVal($get_val): bool
 	{
 
 		$returnVal = false;
@@ -83,7 +85,7 @@ class Lib
 	}
 
 	// check data status
-	function checkFileStatus(string $get_val): bool
+	public function checkFileStatus(string $get_val): bool
 	{
 
 		$returnVal = false;
@@ -106,7 +108,7 @@ class Lib
 	}
 
 	// get the path
-	function checkAdminPath(string $page): ?string
+	public function checkAdminPath(string $page): ?string
 	{
 		$returnVal = null;
 
@@ -126,7 +128,7 @@ class Lib
 	}
 
 	// Success Msg
-	function showSuccessMsg(array $get_msg_array)
+	public function showSuccessMsg(array $get_msg_array)
 	{
 
 		if (count($get_msg_array) > 0) {
@@ -145,7 +147,7 @@ class Lib
 	}
 
 	// Error Msg
-	function showErrorMsg(array $get_error_array)
+	public function showErrorMsg(array $get_error_array)
 	{
 
 		if (count($get_error_array) > 0) {
@@ -164,7 +166,7 @@ class Lib
 	}
 
 	// success dialog
-	function showAlertMsg(string $get_string): string
+	public function showAlertMsg(string $get_string): string
 	{
 		$returnVal = $get_string;
 		if ($this->checkVal($returnVal)) {
@@ -177,7 +179,7 @@ class Lib
 	}
 
 	// success dialog
-	function getRedirect(string $get_string): string
+	public function getRedirect(string $get_string): string
 	{
 		$returnVal = $get_string;
 		if ($this->checkVal($returnVal)) {
@@ -188,7 +190,7 @@ class Lib
 	}
 
 	// for menu toggle
-	function toggleMenu(string $page, string $section)
+	public function toggleMenu(string $page, string $section)
 	{
 		if (preg_match("/^{$section}/", $page)) {
 			echo "class=\"active\"";
@@ -196,7 +198,7 @@ class Lib
 	}
 
 	// general ip getter
-	function getIp(): string
+	public function getIp(): string
 	{
 		$ipaddress = '';
 		// 注意: HTTP_CLIENT_IP 和 HTTP_X_FORWARDED_FOR 容易被偽造
@@ -218,9 +220,10 @@ class Lib
 	}
 
 	// file upload
-	function fileUpload(array $getFile, string $input_name, string $config_upload_folder): array
+	public function fileUpload(array $getFile, string $input_name, string $config_upload_folder): array
 	{
-		$returnVal = array("status" => false, "file" => array());
+		// [Fix] Ensure file_name array is initialized to prevent uninitialized key access
+		$returnVal = array("status" => false, "file" => array(), "file_name" => array());
 
 		// 檢查 isset 防止未定義索引錯誤
 		if (!isset($getFile[$input_name]['name'])) {
@@ -233,9 +236,9 @@ class Lib
 		if ($getTotalUploadFiles > 0) {
 			// upload loop
 			for ($i = 0; $i < $getTotalUploadFiles; $i++) {
-				if ($this->checkVal($getFile[$input_name]['name'][$i])) {
+				if (isset($getFile[$input_name]['name'][$i]) && $this->checkVal($getFile[$input_name]['name'][$i])) {
 					// check file val
-					if ($getFile[$input_name]['error'][$i] == 0) {
+					if (isset($getFile[$input_name]['error'][$i]) && $getFile[$input_name]['error'][$i] == 0) {
 						$folder = $config_upload_folder;
 
 						$file_tmp_name = $getFile[$input_name]['tmp_name'][$i];
