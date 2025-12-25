@@ -171,7 +171,9 @@ class Article
 					// get article data
 					$getList = $this->getAllList("display");
 					// get single article
-					$getArticleData = $getList[$getId];
+					// get single article
+					// [Fix] Add null coalescing operator to prevent undefined index error
+					$getArticleData = $getList[$getId] ?? [];
 
 					if (!empty($getArticleData)) {
 						$return_status = true;
@@ -195,10 +197,18 @@ class Article
 		$getIp = $this->getLib->getIp();
 
 		// get data
-		$fp = fopen($this->checkerPath, "r");
-		// get content
-		$fsize = filesize($this->checkerPath);
-		$contents = ($fsize > 0) ? fread($fp, $fsize) : "";
+		// get data
+		$contents = "";
+		if (file_exists($this->checkerPath)) {
+			// [Fix] Defensive coding: check file existence and handle fopen failure
+			$fp = fopen($this->checkerPath, "r");
+			if ($fp !== false) {
+				// get content
+				$fsize = filesize($this->checkerPath);
+				$contents = ($fsize > 0) ? fread($fp, $fsize) : "";
+				fclose($fp);
+			}
+		}
 
 		// split contents
 		$maxData = 50;
@@ -542,7 +552,8 @@ class Article
 								} else {
 									// push data
 									$article_files[] = $fileData;
-									$article_files_name[] = $file_name_remain[$count];
+									// [Fix] Add null coalescing operator to prevent undefined offset
+									$article_files_name[] = $file_name_remain[$count] ?? '';
 								}
 								$count++;
 							}
