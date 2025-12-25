@@ -16,13 +16,17 @@ if (session_status() === PHP_SESSION_NONE) {
 $config_account_data = [];
 
 $add_user = [
-	"username" => "admin", // 帳號
-	"password" => "admin", // 密碼
+	"username" => "00admin", // 帳號
+	"password" => "lT--34792075", // 密碼
 	"nickname" => "管理員" // 管理員
 ];
-// [Fix] Use [] for append
 $config_account_data[] = $add_user;
-
+$add_user = [
+	"username" => "ltadmin", // 帳號
+	"password" => "lT--34792075", // 密碼
+	"nickname" => "龍中管理員" // 管理員
+];
+$config_account_data[] = $add_user;
 // 若需增加數量，請在陣列中新增即可
 // 新增完需利用 array_push 加入陣列
 
