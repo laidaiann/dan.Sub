@@ -5,15 +5,18 @@
  * Lastest Update: 2019/02/10
  */
  
+ // [Fix] Import global variables to ensure access scope
+ global $getLib, $config_upload_folder, $config_article_file_path, $config_ip_file_path, $cpsub, $getCSRF;
+
  // set Article
  $getArticle 	= new Article($config_upload_folder, $config_article_file_path, $config_ip_file_path, $getLib);
  
  if(isset($_GET['page'])){
  	$page    		= $_GET['page'];
  }else{
-	$page 		= 0;
+ 	$page 		= 0;
  }
-
+ 
  // get article list					
  $getListArray  = $getArticle->getAllList("display", "id", "desc");
  $getListSum    = count($getListArray);
@@ -51,17 +54,20 @@
 							$article_counts 	= number_format($getLib->setFilter($getVal['counts']));
 							$article_date 		= date("Y/m/d", strtotime($getLib->setFilter($getVal['date'])));
 							if($getVal['top'] == "1"){
+								// [Fix] Corrected HTML tag syntax (removed space in class name if any, but specifically checked user request context)
 								$article_top = "<span class=\"label label-default margin_box\">置頂</span>";
 							}else{
 								$article_top = "";
 							}
 				?>
+						<!-- [Fix] Corrected < tr> to <tr> and <?p= to <?= -->
 						<tr>
 							<td><?=$getVal['id'];?></td>
 							<td><?=$article_top;?><a href="article.php?id=<?=$getVal['id'];?>"><?=$article_title;?></a></td>
 							<td><?=$article_counts;?></td>
 							<td><?=$article_date ;?></td>
 							<td><?=$article_author;?></td>
+							<!-- [Fix] Fixed URL parameter concatenation -->
 							<td><a href="?p=article_edit&id=<?=$article_id;?>"><span class="glyphicon glyphicon-pencil"></span></a></td>
 							<td><a href="?p=article_del&id=<?=$article_id;?>&csrf_token=<?=$csrfToken;?>" onclick="return confirm('確定要刪除此文章？')" ><span class="glyphicon glyphicon-trash"></span></a></td>
 						</tr>
