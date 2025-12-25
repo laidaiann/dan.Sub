@@ -33,6 +33,12 @@ class Article
 		// read csv file
 		if (($handle = fopen($this->filePath, "r")) !== FALSE) {
 			while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+				// [Fix] Defensive coding: Check if data is array and pad it to avoid undefined offsets
+				if (!is_array($data) || count($data) < 1) {
+					continue;
+				}
+				$data = array_pad($data, 11, "");
+
 				// set initial array
 				$setList = array();
 				if ($mode == "display") {
@@ -150,6 +156,10 @@ class Article
 	public function getArticle(int $getId)
 	{
 
+		// [Fix] Initialize variables before try block
+		$return_status = false;
+		$return_data = array();
+
 		$returnVal = array("status" => false, "data" => array());
 
 		try {
@@ -260,6 +270,8 @@ class Article
 
 	public function addViewCounts(int $getId)
 	{
+		// [Fix] Initialize return status
+		$return_status = false;
 		$returnVal = array("status" => false);
 
 		// checking IP
@@ -407,7 +419,11 @@ class Article
 						// check the last id
 						$getSize = count($resultArray);
 
-						$getLastId = $resultArray[$getSize - 1][0] ?? 0;
+						// [Fix] Prevent offset -1 error by checking size
+						$getLastId = 0;
+						if ($getSize > 0) {
+							$getLastId = $resultArray[$getSize - 1][0] ?? 0;
+						}
 
 						$columnArray[0] = $getLastId + 1;
 
@@ -590,8 +606,8 @@ class Article
 										$existData[6] = $columnArray[6];
 										$existData[7] = $columnArray[7];
 										$existData[8] = $columnArray[8];
-										$existData[9] = $existData[9];
-										$existData[10] = $existData[10];
+
+										// [Fix] Removed redundant self-assignments to [9] and [10]
 									}
 
 									$dataArray[] = $existData;
@@ -633,8 +649,11 @@ class Article
 	public function delArticle(int $getId)
 	{
 		$returnVal = array("status" => false, "msg" => array());
+		// [Fix] Initialize variables
+		$msg_array = array();
+		$return_status = false;
+
 		try {
-			$msg_array = array();
 
 			// check id & show contents
 			if (filter_has_var(INPUT_GET, "id")) {
