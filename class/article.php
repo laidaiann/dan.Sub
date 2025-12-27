@@ -265,20 +265,15 @@ class Article
 
 		// save ip 
 		$newData = $getIp . "," . strtotime(date("Y-m-d H:i:s"));
+
+		// put data into csv
+		$fp = fopen($this->checkerPath, "w");
+
 		$getLine = $newData . "|" . $contents;
 
-		// [Safe Write] put data into ip file with flock
-		$fp = fopen($this->checkerPath, "c+");
-		if ($fp !== false && flock($fp, LOCK_EX)) {
-		    ftruncate($fp, 0);
-		    rewind($fp);
-		    fwrite($fp, $getLine);
-		    fflush($fp);
-		    flock($fp, LOCK_UN);
-		}
-		if ($fp !== false) {
-		    fclose($fp);
-		}
+		fwrite($fp, $getLine);
+
+		fclose($fp);
 
 		return $returnVal;
 	}
@@ -296,62 +291,43 @@ class Article
 				if (filter_has_var(INPUT_GET, "id")) {
 					if (filter_var($getId, FILTER_VALIDATE_INT)) {
 						$getId = intval($this->getLib->setFilter($getId));
-						// [Atomic Read-Modify-Write] for view counts with flock
-						$fp = fopen($this->filePath, 'c+');
-						if ($fp === false) {
-						    $return_status = false;
-						} elseif (flock($fp, LOCK_EX)) {
-						    // === Read Phase (在鎖內讀取) ===
-						    rewind($fp);
-						    $fileContent = stream_get_contents($fp);
-						    $lines = ($fileContent !== false && strlen($fileContent) > 0) 
-						             ? explode("\n", trim($fileContent)) 
-						             : array();
-						    
-						    $dataArray = array();
-						    $nowTime = strtotime(date("Y-m-d H:i:s"));
-						    $shouldUpdate = false;
+						// start updating					
+						$dataArray = array();
 
-						    foreach ($lines as $line) {
-						        if (empty(trim($line))) {
-						            continue;
-						        }
-						        $row = str_getcsv($line);
-						        // [Fix] Pad row to prevent undefined offset
-						        $row = array_pad($row, 11, "");
+						// update array
+						$resultArray = $this->getAllList();
 
-						        if (isset($row[0]) && intval($row[0]) == $getId) {
-						            $getLastViewTime = intval($row[10]);
-						            // check time (30 seconds threshold to prevent abuse)
-						            if (($nowTime - $getLastViewTime) > 30) {
-						                $row[9] = intval($row[9]) + 1;   // counts + 1
-						                $row[10] = $nowTime;              // update last view time
-						                $shouldUpdate = true;
-						            }
-						        }
-						        $dataArray[] = $row;
-						    }
+						// get last update time
+						$nowTime = strtotime(date("Y-m-d H:i:s"));
+						$getLastViewTime = strtotime(date("Y-m-d H:i:s"));
 
-						    // === Write Phase (在鎖內寫入) ===
-						    if ($shouldUpdate && !empty($dataArray)) {
-						        ftruncate($fp, 0);
-						        rewind($fp);
-						        foreach ($dataArray as $fields) {
-						            fputcsv($fp, $fields);
-						        }
-						        fflush($fp);
-						    }
-						    
-						    flock($fp, LOCK_UN);
-						    $return_status = true;
-						} else {
-						    // 無法取得鎖定
-						    $return_status = false;
+						// update exist data
+						foreach ($resultArray as $existData) {
+							if ($existData[0] == $getId) {
+
+								// get the last view time
+								$getLastViewTime = $existData[10];
+
+								$existData[9] = intval($existData[9]) + 1;
+								$existData[10] = strtotime(date("Y-m-d H:i:s"));
+							}
+
+							$dataArray[] = $existData;
 						}
 
-						if ($fp !== false) {
-						    fclose($fp);
+						// check time
+						if (($nowTime - $getLastViewTime) > 30) {
+							// put data into csv
+							$fp = fopen($this->filePath, "w");
+
+							foreach ($dataArray as $fields) {
+								fputcsv($fp, $fields);
+							}
+
+							fclose($fp);
 						}
+
+						$return_status = true;
 					}
 				}
 			} catch (Exception $e) {
@@ -464,20 +440,14 @@ class Article
 						// add new data
 						$resultArray[] = $columnArray;
 
-						// [Safe Write] put data into csv with flock
-						$fp = fopen($this->filePath, "c+");
-						if ($fp !== false && flock($fp, LOCK_EX)) {
-						    ftruncate($fp, 0);
-						    rewind($fp);
-						    foreach ($resultArray as $fields) {
-						        fputcsv($fp, $fields);
-						    }
-						    fflush($fp);
-						    flock($fp, LOCK_UN);
+						// put data into csv
+						$fp = fopen($this->filePath, "w");
+
+						foreach ($resultArray as $fields) {
+							fputcsv($fp, $fields);
 						}
-						if ($fp !== false) {
-						    fclose($fp);
-						}
+
+						fclose($fp);
 
 						$success_msg = "新增文章成功！";
 						$msg_array[] = $success_msg;
@@ -654,20 +624,14 @@ class Article
 									$dataArray[] = $existData;
 								}
 
-								// [Safe Write] put data into csv with flock
-								$fp = fopen($this->filePath, "c+");
-								if ($fp !== false && flock($fp, LOCK_EX)) {
-								    ftruncate($fp, 0);
-								    rewind($fp);
-								    foreach ($dataArray as $fields) {
-								        fputcsv($fp, $fields);
-								    }
-								    fflush($fp);
-								    flock($fp, LOCK_UN);
+								// put data into csv
+								$fp = fopen($this->filePath, "w");
+
+								foreach ($dataArray as $fields) {
+									fputcsv($fp, $fields);
 								}
-								if ($fp !== false) {
-								    fclose($fp);
-								}
+
+								fclose($fp);
 
 								$success_msg = "更新文章成功！";
 								$msg_array[] = $success_msg;
@@ -720,20 +684,14 @@ class Article
 						}
 					}
 
-					// [Safe Write] put data into csv with flock
-					$fp = fopen($this->filePath, "c+");
-					if ($fp !== false && flock($fp, LOCK_EX)) {
-					    ftruncate($fp, 0);
-					    rewind($fp);
-					    foreach ($dataArray as $fields) {
-					        fputcsv($fp, $fields);
-					    }
-					    fflush($fp);
-					    flock($fp, LOCK_UN);
+					// put data into csv
+					$fp = fopen($this->filePath, "w");
+
+					foreach ($dataArray as $fields) {
+						fputcsv($fp, $fields);
 					}
-					if ($fp !== false) {
-					    fclose($fp);
-					}
+
+					fclose($fp);
 
 					$success_msg = "文章刪除成功！";
 					$msg_array[] = $success_msg;

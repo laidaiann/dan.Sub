@@ -71,28 +71,22 @@ class Settings
 				if (count($msg_array) == 0) {
 					try {
 
-						// [Safe Write] update settings file with flock
-						$fp = fopen($this->filePath, "c+");
-						if ($fp !== false && flock($fp, LOCK_EX)) {
-						    ftruncate($fp, 0);
-						    rewind($fp);
-						    fwrite($fp, $system_title . "\n");
-						    fwrite($fp, $system_filter . "\n");
-						    fwrite($fp, $system_stripslashes . "\n");
-						    fwrite($fp, $system_display_num . "\n");
-						    fwrite($fp, $system_display_page_num . "\n");
-						    fwrite($fp, $system_csrf_protection);
-						    fflush($fp);
-						    flock($fp, LOCK_UN);
-						    
-						    $success_msg = "設定更新成功！";
-						    $msg_array[] = $success_msg;
-						    $return_status = true;
+						$fp = fopen($this->filePath, "w");
+						if ($fp) {
+							fwrite($fp, $system_title . "\n");
+							fwrite($fp, $system_filter . "\n");
+							fwrite($fp, $system_stripslashes . "\n");
+							fwrite($fp, $system_display_num . "\n");
+							fwrite($fp, $system_display_page_num . "\n");
+							fwrite($fp, $system_csrf_protection);
+							fclose($fp);
+
+							$success_msg = "設定更新成功！";
+							$msg_array[] = $success_msg;
+
+							$return_status = true;
 						} else {
-						    $msg_array[] = "無法寫入設定檔 (檔案開啟或鎖定失敗)";
-						}
-						if ($fp !== false) {
-						    fclose($fp);
+							$msg_array[] = "無法寫入設定檔";
 						}
 					} catch (Exception $e) {
 						$error_msg = "資料庫錯誤 <br />{$e}";
