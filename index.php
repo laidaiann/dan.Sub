@@ -108,7 +108,7 @@ $website_title = $getLib->setFilter($cpsub['title']) . "-" . $website_current_pa
 							// [Fix] Add XSS protection
 							$article_title = htmlspecialchars($getLib->setFilter($getVal['title']), ENT_QUOTES, 'UTF-8');
 							$article_author = htmlspecialchars($getLib->setFilter($getVal['author']), ENT_QUOTES, 'UTF-8');
-							$article_counts = number_format($getLib->setFilter($getVal['counts']));
+							$article_counts = number_format(intval($getLib->setFilter($getVal['counts'])));
 							$article_date = date("Y/m/d", strtotime($getLib->setFilter($getVal['date'])));
 							if ($getVal['top'] == "1") {
 								$article_top = "<span class=\"label label-default margin_box\">置頂</span>";
