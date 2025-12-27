@@ -22,6 +22,85 @@ class Article
 		$this->getLib = $getLib;
 	}
 
+	/**
+	 * 帶共享鎖的讀取方法
+	 * @param string $filePath 檔案路徑
+	 * @return array 讀取的資料陣列
+	 */
+	private function readWithLock(string $filePath): array
+	{
+		$data = [];
+		
+		if (!file_exists($filePath)) {
+			return $data;
+		}
+		
+		$fp = fopen($filePath, "r");
+		if ($fp === false) {
+			return $data;
+		}
+		
+		// 取得共享鎖 (允許多個讀取，阻止寫入)
+		if (!flock($fp, LOCK_SH)) {
+			fclose($fp);
+			return $data;
+		}
+		
+		try {
+			while (($row = fgetcsv($fp, 0, ",")) !== false) {
+				if (is_array($row) && count($row) >= 1) {
+					$data[] = $row;
+				}
+			}
+		} finally {
+			flock($fp, LOCK_UN);
+			fclose($fp);
+		}
+		
+		return $data;
+	}
+
+	/**
+	 * 帶排他鎖的寫入方法
+	 * @param string $filePath 檔案路徑
+	 * @param array $data 要寫入的資料陣列
+	 * @return bool 是否成功
+	 */
+	private function writeWithLock(string $filePath, array $data): bool
+	{
+		$fp = fopen($filePath, "c+");
+		if ($fp === false) {
+			return false;
+		}
+		
+		// 取得排他鎖 (獨佔檔案，阻止讀取和寫入)
+		if (!flock($fp, LOCK_EX)) {
+			fclose($fp);
+			return false;
+		}
+		
+		try {
+			// 清空檔案
+			ftruncate($fp, 0);
+			rewind($fp);
+			
+			// 寫入資料
+			foreach ($data as $fields) {
+				if (is_array($fields)) {
+					fputcsv($fp, $fields);
+				}
+			}
+			
+			// 確保寫入磁碟
+			fflush($fp);
+			
+			return true;
+		} finally {
+			flock($fp, LOCK_UN);
+			fclose($fp);
+		}
+	}
+
 	public function getAllList(?string $mode = null, ?string $ordercolumn = null, ?string $orderby = null, ?string $keywords = null)
 	{
 
@@ -31,8 +110,9 @@ class Article
 		$topArray = array();
 		$normalArray = array();
 		// read csv file
-		if (($handle = fopen($this->filePath, "r")) !== FALSE) {
-			while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+		$rawData = $this->readWithLock($this->filePath);
+		if (!empty($rawData)) {
+			foreach ($rawData as $data) {
 				// [Fix] Defensive coding: Check if data is array and pad it to avoid undefined offsets
 				if (!is_array($data) || count($data) < 1) {
 					continue;
@@ -131,7 +211,7 @@ class Article
 					$returnVal[] = $setList;
 				}
 			}
-			fclose($handle);
+
 
 			// sort
 			if ($mode == "display") {
@@ -317,14 +397,8 @@ class Article
 
 						// check time
 						if (($nowTime - $getLastViewTime) > 30) {
-							// put data into csv
-							$fp = fopen($this->filePath, "w");
-
-							foreach ($dataArray as $fields) {
-								fputcsv($fp, $fields);
-							}
-
-							fclose($fp);
+							// put data into csv with lock
+							$this->writeWithLock($this->filePath, $dataArray);
 						}
 
 						$return_status = true;
@@ -440,14 +514,14 @@ class Article
 						// add new data
 						$resultArray[] = $columnArray;
 
-						// put data into csv
-						$fp = fopen($this->filePath, "w");
+						// put data into csv with lock
+						$writeSuccess = $this->writeWithLock($this->filePath, $resultArray);
 
-						foreach ($resultArray as $fields) {
-							fputcsv($fp, $fields);
+						if (!$writeSuccess) {
+							$error_msg = "檔案寫入失敗，請稍後再試";
+							$msg_array[] = $error_msg;
+							$return_status = false;
 						}
-
-						fclose($fp);
 
 						$success_msg = "新增文章成功！";
 						$msg_array[] = $success_msg;
@@ -624,14 +698,14 @@ class Article
 									$dataArray[] = $existData;
 								}
 
-								// put data into csv
-								$fp = fopen($this->filePath, "w");
+								// put data into csv with lock
+								$writeSuccess = $this->writeWithLock($this->filePath, $dataArray);
 
-								foreach ($dataArray as $fields) {
-									fputcsv($fp, $fields);
+								if (!$writeSuccess) {
+									$error_msg = "檔案寫入失敗，請稍後再試";
+									$msg_array[] = $error_msg;
+									$return_status = false;
 								}
-
-								fclose($fp);
 
 								$success_msg = "更新文章成功！";
 								$msg_array[] = $success_msg;
@@ -684,14 +758,14 @@ class Article
 						}
 					}
 
-					// put data into csv
-					$fp = fopen($this->filePath, "w");
+					// put data into csv with lock
+					$writeSuccess = $this->writeWithLock($this->filePath, $dataArray);
 
-					foreach ($dataArray as $fields) {
-						fputcsv($fp, $fields);
+					if (!$writeSuccess) {
+						$error_msg = "檔案寫入失敗，請稍後再試";
+						$msg_array[] = $error_msg;
+						$return_status = false;
 					}
-
-					fclose($fp);
 
 					$success_msg = "文章刪除成功！";
 					$msg_array[] = $success_msg;
