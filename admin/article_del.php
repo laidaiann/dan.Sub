@@ -18,7 +18,15 @@ $getArticle = new Article($config_upload_folder, $config_article_file_path, $con
 
 // 安全處理 ID
 // [Fix] Defensive ID check
-$getId = isset($_GET['id']) ? intval($getLib->setFilter($_GET['id'])) : 0;
+// 優先使用 POST，向下相容 GET（過渡期）
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $getId = isset($_POST['id']) ? intval($getLib->setFilter($_POST['id'])) : 0;
+    $requestData = $_POST;
+} else {
+    // 向下相容：仍支援 GET（但建議移除）
+    $getId = isset($_GET['id']) ? intval($getLib->setFilter($_GET['id'])) : 0;
+    $requestData = $_GET;
+}
 
 try {
     // check CSRF - 針對 GET 請求也需要某種程度的驗證，或者確認此操作是否應該用 POST
@@ -26,7 +34,7 @@ try {
     if (isset($getCSRF)) {
         // 若使用 GET 刪除，Token 應包含在 URL 中
         // [Fix] Pass $_GET for token validation as per logic freeze constraint
-        $getCSRF->checkToken($_GET);
+        $getCSRF->checkToken($requestData);
     }
 
     // set add function

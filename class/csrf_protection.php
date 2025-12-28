@@ -19,14 +19,21 @@ class CSRFProtection
 	}
 
 	// save token into session
-	public function genToken()
+	public function genToken(bool $forceNew = false)
 	{
 		// [Fix] Session safety: Start session if not started
 		if (session_status() === PHP_SESSION_NONE) {
 			session_start();
 		}
 
-		$_SESSION['csrf_token'] = $this->getLib->generateRandomString(7);
+		// 若 Session 中已有有效 Token 且非強制更新，則直接使用
+		if (!$forceNew && !empty($_SESSION['csrf_token'])) {
+			$this->getToken = $_SESSION['csrf_token'];
+			return $this->getToken;
+		}
+
+		// 產生新 Token
+		$_SESSION['csrf_token'] = $this->getLib->generateRandomString(32);
 
 		$this->getToken = $_SESSION['csrf_token'];
 
@@ -51,27 +58,52 @@ class CSRFProtection
 		return "<input type='hidden' name='csrf_token' value='" . $token . "'>";
 	}
 
-	// check token
-	public function checkToken(array $postData)
+	/**
+	 * 取得目前的 CSRF Token（若不存在則產生）
+	 * @return string
+	 */
+	public function getToken(): string
 	{
-		if (!empty($postData)) {
-			// [Fix] Session safety
-			if (session_status() === PHP_SESSION_NONE) {
-				session_start();
-			}
+		if (session_status() === PHP_SESSION_NONE) {
+			session_start();
+		}
 
-			// [Fix] Use null coalescing operator to prevent undefined index
-			$session_token = $_SESSION['csrf_token'] ?? '';
-			$post_token = $postData['csrf_token'] ?? '';
+		if (empty($this->getToken)) {
+			$this->genToken();
+		}
 
-			if ($session_token == $post_token && $post_token != "" && $session_token != "") {
-				// pass
-				$returnVal = true;
-			} else {
-				echo $this->getLib->showAlertMsg("驗證錯誤，請使用單一視窗操作");
-				echo $this->getLib->getRedirect("./");
-				exit;
+		return $this->getToken;
+	}
+
+	// check token
+	public function checkToken(array $requestData, bool $regenerateAfterCheck = true): bool
+	{
+		// [Fix] Session safety
+		if (session_status() === PHP_SESSION_NONE) {
+			session_start();
+		}
+
+		// 若無資料則視為驗證失敗
+		if (empty($requestData)) {
+			echo $this->getLib->showAlertMsg("驗證錯誤，請求資料為空");
+			echo $this->getLib->getRedirect("./");
+			exit;
+		}
+
+		$session_token = $_SESSION['csrf_token'] ?? '';
+		$request_token = $requestData['csrf_token'] ?? '';
+
+		// 使用 hash_equals 防止時序攻擊
+		if (!empty($session_token) && !empty($request_token) && hash_equals($session_token, $request_token)) {
+			// 驗證成功後重新產生 Token（防止重複使用）
+			if ($regenerateAfterCheck) {
+				$this->genToken(true);
 			}
+			return true;
+		} else {
+			echo $this->getLib->showAlertMsg("驗證錯誤，請使用單一視窗操作");
+			echo $this->getLib->getRedirect("./");
+			exit;
 		}
 	}
 }

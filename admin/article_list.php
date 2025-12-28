@@ -28,7 +28,7 @@ $pagename = "?p=article_list&";
 $getPage = new Pager($page, $many, $display, $total, $pagename);
 $pageStart = intval($getPage->startVar);
 $pageMany = intval($getPage->manyVar);
-$csrfToken = $getCSRF->genToken();
+$csrfToken = $getCSRF->genToken(false);
 ?>
 <div class="panel panel-default">
 	<table class="table table-hover">
@@ -67,10 +67,19 @@ $csrfToken = $getCSRF->genToken();
 						<td><?= $article_date; ?></td>
 						<td><?= $article_author; ?></td>
 						<!-- [Fix] Fixed URL parameter concatenation -->
-						<td><a href="?p=article_edit&id=<?= $article_id; ?>"><span class="glyphicon glyphicon-pencil"></span></a>
+						<td><a href="?p=article_edit&id=<?= $article_id; ?>"><span
+									class="glyphicon glyphicon-pencil"></span></a>
 						</td>
-						<td><a href="?p=article_del&id=<?= $article_id; ?>&csrf_token=<?= $csrfToken; ?>"
-								onclick="return confirm('確定要刪除此文章？')"><span class="glyphicon glyphicon-trash"></span></a></td>
+						<td>
+							<form method="POST" action="?p=article_del" style="display:inline;"
+								onsubmit="return confirm('確定要刪除此文章？')">
+								<input type="hidden" name="id" value="<?= $article_id; ?>">
+								<input type="hidden" name="csrf_token" value="<?= $csrfToken; ?>">
+								<button type="submit" class="btn btn-link btn-sm" style="padding:0;">
+									<span class="glyphicon glyphicon-trash"></span>
+								</button>
+							</form>
+						</td>
 					</tr>
 					<?php
 				}
