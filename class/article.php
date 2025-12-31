@@ -459,6 +459,22 @@ class Article
 					$msg_array[] = $error_msg;
 				}
 
+				// 欄位長度限制驗證
+				if (mb_strlen($article_title, 'UTF-8') > 50) {
+					$error_msg = "標題不可超過 50 字";
+					$msg_array[] = $error_msg;
+				}
+
+				if (mb_strlen($article_author, 'UTF-8') > 10) {
+					$error_msg = "發佈單位不可超過 10 字";
+					$msg_array[] = $error_msg;
+				}
+
+				if (mb_strlen($article_content, 'UTF-8') > 20480) {
+					$error_msg = "內文不可超過 20480 字";
+					$msg_array[] = $error_msg;
+				}
+
 				if (!$this->getLib->checkVal($article_top)) {
 					$article_top = "0";
 				}
@@ -606,6 +622,22 @@ class Article
 
 						if (!filter_has_var(INPUT_POST, "article_content") || !$this->getLib->checkVal($article_content)) {
 							$error_msg = "請輸入內文";
+							$msg_array[] = $error_msg;
+						}
+
+						// 欄位長度限制驗證
+						if (mb_strlen($article_title, 'UTF-8') > 50) {
+							$error_msg = "標題不可超過 50 字";
+							$msg_array[] = $error_msg;
+						}
+
+						if (mb_strlen($article_author, 'UTF-8') > 10) {
+							$error_msg = "發佈單位不可超過 10 字";
+							$msg_array[] = $error_msg;
+						}
+
+						if (mb_strlen($article_content, 'UTF-8') > 20480) {
+							$error_msg = "內文不可超過 20480 字";
 							$msg_array[] = $error_msg;
 						}
 
