@@ -35,3 +35,18 @@ body, h3, a, small, h1{
 .small_font{
 	font-size: 14px;
 }
+
+/* Custom Blue Theme */
+.page-header h1 a,
+.table > tbody > tr > td > a,
+.panel-title,
+.footer {
+    color: #337ab7;
+}
+
+/* Hover effect */
+.page-header h1 a:hover,
+.table > tbody > tr > td > a:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
