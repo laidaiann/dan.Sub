@@ -70,6 +70,41 @@ class Lib
 		return $returnVal;
 	}
 
+	/**
+	 * CSV 公式注入防護
+	 * 防止 Excel 開啟 CSV 時執行惡意公式
+	 * 
+	 * @param mixed $value 要處理的值（字串或陣列）
+	 * @return mixed 處理後的值
+	 */
+	public function sanitizeForCSV($value)
+	{
+		// 支援陣列遞迴處理
+		if (is_array($value)) {
+			foreach ($value as $k => $v) {
+				$value[$k] = $this->sanitizeForCSV($v);
+			}
+			return $value;
+		}
+
+		// 轉為字串
+		$value = (string) $value;
+
+		// 若為空字串，直接回傳
+		if ($value === '') {
+			return $value;
+		}
+
+		// 危險字元清單：=, +, -, @, Tab(\t), CR(\r)
+		// 這些字元開頭的內容在 Excel 中可能被解析為公式
+		if (preg_match('/^[\=\+\-\@\t\r]/', $value)) {
+			// 在開頭加上單引號，Excel 會將其視為純文字
+			$value = "'" . $value;
+		}
+
+		return $value;
+	}
+
 	// 檢查是否有數值
 	public function checkVal($get_val): bool
 	{

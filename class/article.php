@@ -30,22 +30,22 @@ class Article
 	private function readWithLock(string $filePath): array
 	{
 		$data = [];
-		
+
 		if (!file_exists($filePath)) {
 			return $data;
 		}
-		
+
 		$fp = fopen($filePath, "r");
 		if ($fp === false) {
 			return $data;
 		}
-		
+
 		// 取得共享鎖 (允許多個讀取，阻止寫入)
 		if (!flock($fp, LOCK_SH)) {
 			fclose($fp);
 			return $data;
 		}
-		
+
 		try {
 			while (($row = fgetcsv($fp, 0, ",")) !== false) {
 				if (is_array($row) && count($row) >= 1) {
@@ -56,7 +56,7 @@ class Article
 			flock($fp, LOCK_UN);
 			fclose($fp);
 		}
-		
+
 		return $data;
 	}
 
@@ -72,28 +72,30 @@ class Article
 		if ($fp === false) {
 			return false;
 		}
-		
+
 		// 取得排他鎖 (獨佔檔案，阻止讀取和寫入)
 		if (!flock($fp, LOCK_EX)) {
 			fclose($fp);
 			return false;
 		}
-		
+
 		try {
 			// 清空檔案
 			ftruncate($fp, 0);
 			rewind($fp);
-			
+
 			// 寫入資料
 			foreach ($data as $fields) {
 				if (is_array($fields)) {
-					fputcsv($fp, $fields);
+					// CSV 公式注入防護
+					$sanitizedFields = $this->getLib->sanitizeForCSV($fields);
+					fputcsv($fp, $sanitizedFields);
 				}
 			}
-			
+
 			// 確保寫入磁碟
 			fflush($fp);
-			
+
 			return true;
 		} finally {
 			flock($fp, LOCK_UN);
