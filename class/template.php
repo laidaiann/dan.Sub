@@ -37,7 +37,7 @@ class Template
 	{
 		?>
 		<div class="footer">
-			C.P.Sub 公告系統 <?= $this->version; ?> Powered by <a href="http://www.cooltey.org" target="_blank">Cooltey</a>
+			回到<a href="http://www.ltjhs.tyc.edu.tw" target="_blank">龍中首頁</a>
 		</div>
 		<?php
 	}
